@@ -1,0 +1,146 @@
+<div class="scholarship-container">
+    <header class="header">
+      <div class="logo">
+        <h1>ScholarHub</h1>
+      </div>
+      <nav class="navigation">
+        <ul>
+          <li><a routerLink="/home">Home</a></li>
+          <li><a routerLink="/live-status">My Applications</a></li>
+        </ul>
+      </nav>
+      <div class="user-actions">
+        <span class="user-name">Welcome, {{ userName }}!</span>
+      </div>
+    </header>
+  
+    <div class="scholarship-application-container">
+      <div class="scholarship-header">
+        <h2>Apply for Scholarship</h2>
+        <div class="application-status">
+          <div class="step active">Application</div>
+          <div class="step">Review</div>
+          <div class="step">Disbursement</div>
+        </div>
+      </div>
+  
+      <div class="scholarship-details" *ngIf="scholarship">
+        <h2>{{ scholarship.title }}</h2>
+        <div class="scholarship-banner">
+          <div class="banner-content">
+            <div class="scholarship-amount">₹{{ scholarship.amount }}</div>
+            <div class="deadline-info">
+              <span class="deadline-label">Application Deadline:</span>
+              <span class="deadline-date">{{ formatDate(scholarship.deadline) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Provider</span>
+            <span class="value">{{ scholarship.provider }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Category</span>
+            <span class="value">{{ scholarship.category }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Age Eligibility</span>
+            <span class="value">{{ scholarship.age_range }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Income Criteria</span>
+            <span class="value">₹{{ scholarship.income_range }}</span>
+          </div>
+        </div>
+        <div class="description">
+          <h3>About This Scholarship</h3>
+          <p>{{ scholarship.description }}</p>
+        </div>
+      </div>
+  
+      <div class="application-form-container" *ngIf="scholarship && !showSubmissionMessage">
+        <h3>Personal Information</h3>
+        <form [formGroup]="applicationForm" (ngSubmit)="submitApplication()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="studentName">Full Name <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="studentName" 
+                formControlName="studentName" 
+                placeholder="Enter your full name"
+                aria-required="true"
+                [class.invalid]="applicationForm.get('studentName')?.invalid && applicationForm.get('studentName')?.touched"
+              >
+              <div *ngIf="applicationForm.get('studentName')?.invalid && applicationForm.get('studentName')?.touched" class="error-message">
+                Name is required
+              </div>
+            </div>
+  
+            <div class="form-group">
+              <label for="studentEmail">Email Address <span class="required">*</span></label>
+              <input 
+                type="email" 
+                id="studentEmail" 
+                formControlName="studentEmail"
+                placeholder="Enter your email address"
+                aria-required="true"
+                [class.invalid]="applicationForm.get('studentEmail')?.invalid && applicationForm.get('studentEmail')?.touched"
+              >
+              <div *ngIf="applicationForm.get('studentEmail')?.invalid && applicationForm.get('studentEmail')?.touched" class="error-message">
+                <span *ngIf="applicationForm.get('studentEmail')?.errors?.['required']">Email is required</span>
+                <span *ngIf="applicationForm.get('studentEmail')?.errors?.['email']">Please enter a valid email</span>
+              </div>
+            </div>
+          </div>
+  
+          <h3>Required Documents <span class="document-note">(PDF Format Only)</span></h3>
+          <div class="documents-grid">
+            <div *ngFor="let doc of scholarship.required_documents" class="document-upload">
+              <div class="document-label">{{ doc }} <span class="required">*</span></div>
+              <div class="upload-container">
+                <label [for]="getDocumentId(doc)" class="upload-btn" [class.uploaded]="isDocumentUploaded(doc)">
+                  <span class="upload-icon" *ngIf="!isDocumentUploaded(doc)">+</span>
+                  <span class="upload-icon check" *ngIf="isDocumentUploaded(doc)">✓</span>
+                  {{ isDocumentUploaded(doc) ? 'Document Uploaded' : 'Upload PDF' }}
+                </label>
+                <input 
+                  type="file" 
+                  [id]="getDocumentId(doc)" 
+                  accept="application/pdf" 
+                  (change)="onFileSelected($event, doc)" 
+                  style="display: none;"
+                  aria-required="true"
+                >
+                <div *ngIf="isDocumentUploaded(doc)" class="file-name">
+                  {{ documents[doc]?.name }}
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <div class="terms-section">
+            <div class="terms-checkbox">
+              <input type="checkbox" id="terms" formControlName="terms">
+              <label for="terms">I confirm that all information provided is accurate and I meet the eligibility criteria</label>
+              <div *ngIf="applicationForm.get('terms')?.invalid && applicationForm.get('terms')?.touched" class="error-message">
+                You must agree to the terms
+              </div>
+            </div>
+          </div>
+  
+          <div class="form-actions">
+            <button type="button" class="back-btn" (click)="goBack()">Back</button>
+            <button type="submit" class="submit-btn" [disabled]="applicationForm.invalid || !areAllDocumentsUploaded() || isSubmitting">
+              {{ isSubmitting ? 'Submitting...' : 'Submit Application' }}
+            </button>
+          </div>
+  
+          <div *ngIf="showSubmissionMessage" class="submission-message" [class.error]="submissionMessage.includes('Error')" aria-live="polite">
+            {{ submissionMessage }}
+          </div>
+        </form>
+      </div>
+    </div>
+</div>
