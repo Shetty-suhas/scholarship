@@ -83,8 +83,6 @@
   max-width: 600px;
   margin: 0 auto;
 }
-
-/* Applications List Section */
 .applications-list, .application-detail {
   padding: 2rem;
   max-width: 1200px;
@@ -204,6 +202,21 @@
   background-color: #303f9f;
 }
 
+.withdraw-btn {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.withdraw-btn:hover {
+  background-color: #c62828;
+}
+
 .loading, .error, .no-applications {
   background-color: #f8f9fa;
   border-radius: 8px;
@@ -280,7 +293,6 @@
   font-size: 1.1rem;
 }
 
-/* Timeline Styles */
 .application-timeline {
   margin-bottom: 2rem;
 }
@@ -471,8 +483,12 @@
   color: #b0bec5;
   font-size: 0.9rem;
 }
+.col-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-/* Responsive Styles */
 @media (max-width: 768px) {
   .table-header, .table-row {
       grid-template-columns: 3fr 2fr 1.5fr;
@@ -497,5 +513,15 @@
   .loading, .error, .no-applications {
       padding: 1.5rem;
       min-height: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .col-actions {
+    gap: 0.4rem;
+  }
+  .view-details-btn, .withdraw-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
   }
 }

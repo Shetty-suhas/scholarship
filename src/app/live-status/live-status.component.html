@@ -71,6 +71,7 @@
           </div>
           <div class="col-actions">
             <button class="view-details-btn" (click)="viewApplicationDetails(app)">View Details</button>
+            <button class="withdraw-btn" (click)="withdrawApplication(app)">Withdraw Application</button>
           </div>
         </div>
         
@@ -107,6 +108,14 @@
           <span class="item-label">Current Status:</span>
           <span class="item-value status-badge" [ngClass]="getStatusClass(selectedApplication.currentStatus)">
             {{ selectedApplication.currentStatus }}
+          </span>
+        </div>
+        <div class="overview-item" *ngIf="selectedApplication.remarks.length > 0">
+          <span class="item-label">Remarks:</span>
+          <span class="item-value">
+            <ul>
+              <li *ngFor="let remark of selectedApplication.remarks">{{ remark }}</li>
+            </ul>
           </span>
         </div>
       </div>

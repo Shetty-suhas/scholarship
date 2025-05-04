@@ -204,32 +204,22 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
 
       console.log('Submitting FormData:', formData);
 
-      this.http.post('http://localhost:5000/api/applications', formData)
-        .subscribe({
-          next: (response: any) => {
-            console.log('Application submitted:', response);
-            this.submissionMessage = `Application submitted successfully! Status: ${response.status}`;
-            if (response.status === 'rejected' && response.remarks?.length > 0) {
-              this.submissionMessage += `<br>Reasons for rejection:<ul>${response.remarks.map((r: string) => `<li>${r}</li>`).join('')}</ul>`;
-            }
-            this.showSubmissionMessage = true;
-            this.resetForm();
-            setTimeout(() => {
-              this.router.navigate(['/home']);
-            }, 2000);
-          },
-          error: (error) => {
-            console.error('Error submitting application:', error);
-            console.log('Error response:', error.error);
-            this.submissionMessage = error.error?.error || 'Error submitting application. Please try again.';
-            this.showSubmissionMessage = true;
-          },
-          complete: () => {
-            this.isSubmitting = false;
-          }
-        });
+      this.http.post('http://localhost:5000/api/applications', formData).subscribe({
+        next: (response) => {
+          console.log('Application submitted in background:', response);
+        },
+        error: (error) => {
+          console.error('Background submission error:', error);
+        }
+      });
+
+      this.resetForm();
+      this.submissionMessage = 'Application submitted! Redirecting...';
+      this.showSubmissionMessage = true;
+      this.isSubmitting = false;
+      this.router.navigate(['/home']);
     } catch (error) {
-      console.error('Error submitting application:', error);
+      console.error('Error preparing application:', error);
       this.submissionMessage = error instanceof Error ? error.message : 'Error submitting application.';
       this.showSubmissionMessage = true;
       this.isSubmitting = false;

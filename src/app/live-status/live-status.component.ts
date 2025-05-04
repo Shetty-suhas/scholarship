@@ -21,6 +21,7 @@ interface ScholarshipApplication {
   submittedDate: string;
   currentStatus: ApplicationStatus['status'];
   statusHistory: ApplicationStatus[];
+  remarks: string[];
 }
 
 interface BackendApplication {
@@ -32,6 +33,7 @@ interface BackendApplication {
   status: 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected' | 'Awarded';
   submitted_at: string;
   documents: { name: string; file_id: string }[];
+  remarks: string[];
 }
 
 interface Scholarship {
@@ -186,7 +188,9 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
             hour: '2-digit',
             minute: '2-digit'
           }),
-          notes
+          notes: backendApp.remarks.length > 0 && currentStatus === 'Rejected'
+            ? `${notes}. Reasons: ${backendApp.remarks.join('; ')}`
+            : notes
         });
       }
 
@@ -202,8 +206,31 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
           day: 'numeric'
         }),
         currentStatus,
-        statusHistory
+        statusHistory,
+        remarks: backendApp.remarks || []
       };
+    });
+  }
+
+  withdrawApplication(application: ScholarshipApplication): void {
+    if (!confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
+      return;
+    }
+
+    this.http.delete(`http://localhost:5000/api/applications/${application.id}`).subscribe({
+      next: () => {
+        console.log(`Application ${application.id} withdrawn successfully`);
+        this.applications = this.applications.filter(app => app.id !== application.id);
+        this.calculateStatistics();
+        if (this.showDetailView && this.selectedApplication?.id === application.id) {
+          this.closeDetailView();
+        }
+        alert('Application withdrawn successfully.');
+      },
+      error: (error) => {
+        console.error('Error withdrawing application:', error);
+        alert('Failed to withdraw application: ' + (error.error?.error || 'Unknown error'));
+      }
     });
   }
 
