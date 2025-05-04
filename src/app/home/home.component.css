@@ -111,7 +111,6 @@ body {
     color: var(--white);
 }
 
-/* Hero Section */
 .hero-section {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: var(--white);
@@ -162,7 +161,6 @@ body {
     color: var(--white);
 }
 
-/* Scholarships List */
 .scholarships-list {
     padding: 2rem;
     background-color: var(--light-gray);
@@ -188,7 +186,7 @@ body {
     overflow: hidden;
     box-shadow: var(--card-shadow);
     transition: var(--transition);
-    min-height: 400px; /* Ensure uniform card height */
+    min-height: 400px; 
 }
 
 .scholarship-card:hover {
@@ -197,7 +195,7 @@ body {
 }
 
 .card-content {
-    flex: 1; /* Grow to push footer down */
+    flex: 1; 
     display: flex;
     flex-direction: column;
 }
@@ -223,7 +221,7 @@ body {
 
 .card-body {
     padding: 1.5rem;
-    flex: 1; /* Ensure body takes available space */
+    flex: 1;
 }
 
 .card-body p {
@@ -240,7 +238,7 @@ body {
     display: flex;
     justify-content: space-between;
     background-color: var(--light-gray);
-    margin-top: auto; /* Pin to bottom */
+    margin-top: auto; 
 }
 
 .apply-btn, .details-btn {
@@ -277,7 +275,6 @@ body {
     font-size: 16px;
   }
 
-/* About Section */
 .about-section {
     padding: 4rem 2rem;
     background-color: var(--white);
@@ -316,7 +313,6 @@ body {
     margin-bottom: 0.5rem;
 }
 
-/* Contact Section */
 .contact-section {
     padding: 4rem 2rem;
     background-color: var(--light-gray);
@@ -401,7 +397,7 @@ body {
     margin-bottom: 0.5rem;
 }
 
-/* Footer */
+
 .footer {
     background-color: #2a2a2a;
     color: var(--white);
@@ -522,3 +518,9 @@ body {
 html {
     scroll-behavior: smooth;
 }
+
+.apply-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }

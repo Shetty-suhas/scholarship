@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { map, Observable, of, Subscription, switchMap } from 'rxjs';
+import { forkJoin, map, Observable, of, shareReplay, Subscription, switchMap } from 'rxjs';
 import { AuthService } from '../auth/auth-service.service';
 import { ScholarshipService, Scholarship } from '../services/scholarship.service';
 
@@ -21,6 +21,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   userName: string = 'User';
   private fragmentSubscription: Subscription | undefined;
   private userSubscription: Subscription | undefined;
+  private hasAppliedCache: { [scholarshipId: string]: Observable<boolean> } = {};
+  hasAppliedStatuses: { [scholarshipId: string]: boolean } = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -30,15 +32,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.scholarshipService.getScholarships().subscribe({
-      next: (scholarships: any) => {
-        this.scholarships = scholarships;
-        this.filteredScholarships = [...this.scholarships];
-      },
-      error: (error: any) => {
-        console.error('Failed to load scholarships:', error);
-        alert('Could not load scholarships. Please try again later.');
-      }
+    this.userSubscription = this.authService.user$.subscribe(user => {
+      this.userName = user?.displayName || 'User';
+      this.loadScholarshipsAndApplications(user?.uid);
     });
 
     this.fragmentSubscription = this.route.fragment.subscribe(fragment => {
@@ -46,9 +42,52 @@ export class HomeComponent implements OnInit, OnDestroy {
         setTimeout(() => this.scrollToSection(fragment), 0);
       }
     });
+  }
 
-    this.userSubscription = this.authService.user$.subscribe(user => {
-      this.userName = user?.displayName || 'User';
+  private loadScholarshipsAndApplications(userId: string | undefined): void {
+    this.scholarshipService.getScholarships().subscribe({
+      next: (scholarships: any) => {
+        this.scholarships = scholarships;
+        this.filteredScholarships = [...this.scholarships];
+        if (userId) {
+          this.preloadHasAppliedStatuses(userId);
+        } else {
+          this.scholarships.forEach(scholarship => {
+            this.hasAppliedStatuses[scholarship.id] = false;
+          });
+        }
+      },
+      error: (error: any) => {
+        console.error('Failed to load scholarships:', error);
+        alert('Could not load scholarships. Please try again later.');
+      }
+    });
+  }
+
+  private preloadHasAppliedStatuses(userId: string): void {
+    const requests = this.scholarships.map(scholarship =>
+      this.http.get<{ hasApplied: boolean }>(
+        `http://localhost:5000/api/applications/user/${userId}/scholarship/${scholarship.id}`
+      ).pipe(
+        map(response => ({ scholarshipId: scholarship.id, hasApplied: response.hasApplied })),
+        shareReplay(1)
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        results.forEach(result => {
+          this.hasAppliedStatuses[result.scholarshipId] = result.hasApplied;
+          this.hasAppliedCache[result.scholarshipId] = of(result.hasApplied);
+        });
+      },
+      error: (error:any) => {
+        console.error('Failed to preload hasApplied statuses:', error);
+        this.scholarships.forEach(scholarship => {
+          this.hasAppliedStatuses[scholarship.id] = false;
+          this.hasAppliedCache[scholarship.id] = of(false);
+        });
+      }
     });
   }
 

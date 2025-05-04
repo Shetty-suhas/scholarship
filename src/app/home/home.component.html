@@ -46,7 +46,7 @@
             <div class="card-content">
               <div class="card-header">
                 <h3>{{ scholarship.title }}</h3>
-                <span class="amount">{{ scholarship.amount }}</span>
+                <span class="amount">INR {{ scholarship.amount }}</span>
               </div>
               <div class="card-body">
                 <p class="provider"><strong>Provider:</strong> {{ scholarship.provider }}</p>
@@ -56,15 +56,16 @@
               </div>
             </div>
             <div class="card-footer">
-                <button 
-                  class="apply-btn" 
-                  *ngIf="!(hasApplied(scholarship.id) | async)"
-                  [routerLink]="['/apply', scholarship.id]" 
-                  [attr.aria-label]="'Apply for ' + scholarship.title">
-                  Apply Now
-                </button>
-                <span *ngIf="hasApplied(scholarship.id) | async" class="applied-text">Applied</span>
-              </div>
+              <button 
+                class="apply-btn" 
+                *ngIf="!hasAppliedStatuses[scholarship.id]"
+                [routerLink]="['/apply', scholarship.id]" 
+                [attr.aria-label]="'Apply for ' + scholarship.title"
+                [disabled]="hasAppliedStatuses[scholarship.id]">
+                Apply Now
+              </button>
+              <span *ngIf="hasAppliedStatuses[scholarship.id]" class="applied-text">Applied</span>
+            </div>
           </div>
         </div>
       </section>
@@ -120,11 +121,11 @@
             </div>
             <div class="info-item">
               <h3>Phone</h3>
-              <p>+1 (555) 123-4567</p>
+              <p>+91 98765 43210</p>
             </div>
             <div class="info-item">
               <h3>Address</h3>
-              <p>123 Education Lane<br>Knowledge City, KS 12345</p>
+              <p>Kr puram<br>Bangalore, KA 560075</p>
             </div>
           </div>
         </div>

@@ -26,6 +26,23 @@ interface ApplicationDocument {
   file_id: string;
 }
 
+interface BackendApplication {
+  id: string;
+  scholarship_id: string;
+  user_id: string;
+  student_name: string;
+  student_email: string;
+  age: number;
+  gender: string;
+  dob: string;
+  father_name: string;
+  mother_name: string;
+  annual_income: number;
+  status: 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected' | 'Awarded';
+  submitted_at: string;
+  documents: { name: string; file_id: string }[];
+}
+
 @Component({
   selector: 'app-scholarship-application',
   standalone: true,
@@ -96,6 +113,12 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
     this.applicationForm = this.fb.group({
       studentName: ['', [Validators.required]],
       studentEmail: ['', [Validators.required, Validators.email]],
+      age: ['', [Validators.required, Validators.min(15), Validators.max(100)]],
+      gender: ['', [Validators.required]],
+      dob: ['', [Validators.required]],
+      fatherName: ['', [Validators.required]],
+      motherName: ['', [Validators.required]],
+      annualIncome: ['', [Validators.required, Validators.min(0)]],
       terms: [true, [Validators.requiredTrue]]
     });
   }
@@ -150,7 +173,6 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
     this.showSubmissionMessage = false;
     
     try {
-      // Get the current user's UID from AuthService
       let user: any;
       await this.authService.user$.pipe(take(1)).toPromise().then(u => {
         user = u;
@@ -159,16 +181,20 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
         }
       });
 
-      // Prepare FormData for multipart/form-data request
       const formData = new FormData();
       formData.append('scholarship_id', this.scholarship.id);
       formData.append('user_id', user.uid);
       formData.append('student_name', this.applicationForm.get('studentName')?.value || '');
       formData.append('student_email', this.applicationForm.get('studentEmail')?.value || '');
-      formData.append('status', 'Submitted'); // Updated to new status
+      formData.append('age', this.applicationForm.get('age')?.value?.toString() || '');
+      formData.append('gender', this.applicationForm.get('gender')?.value || '');
+      formData.append('dob', this.applicationForm.get('dob')?.value || '');
+      formData.append('father_name', this.applicationForm.get('fatherName')?.value || '');
+      formData.append('mother_name', this.applicationForm.get('motherName')?.value || '');
+      formData.append('annual_income', this.applicationForm.get('annualIncome')?.value?.toString() || '');
+      formData.append('status', 'pending');
       formData.append('submitted_at', new Date().toISOString());
 
-      // Append files
       for (const docName of this.scholarship.required_documents) {
         const file = this.documents[docName];
         if (file) {
@@ -176,14 +202,16 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
         }
       }
 
-      console.log('Submitting FormData:', formData); // Log FormData (note: FormData logging may be limited)
+      console.log('Submitting FormData:', formData);
 
-      // Send multipart/form-data request
       this.http.post('http://localhost:5000/api/applications', formData)
         .subscribe({
           next: (response: any) => {
             console.log('Application submitted:', response);
-            this.submissionMessage = 'Application submitted successfully!';
+            this.submissionMessage = `Application submitted successfully! Status: ${response.status}`;
+            if (response.status === 'rejected' && response.remarks?.length > 0) {
+              this.submissionMessage += `<br>Reasons for rejection:<ul>${response.remarks.map((r: string) => `<li>${r}</li>`).join('')}</ul>`;
+            }
             this.showSubmissionMessage = true;
             this.resetForm();
             setTimeout(() => {

@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../auth/auth-service.service';
-import { Subscription, forkJoin } from 'rxjs';
-import { switchMap, map } from 'rxjs/operators';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { switchMap, map, catchError } from 'rxjs/operators';
 
 interface ApplicationStatus {
   status: 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected' | 'Awarded';
@@ -73,38 +73,64 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    console.log('LiveStatusComponent: Initializing');
     this.userSubscription = this.authService.user$.pipe(
       switchMap(user => {
-        this.userName = user?.displayName || 'User';
+        console.log('LiveStatusComponent: User received', user);
         if (!user?.uid) {
+          console.warn('LiveStatusComponent: No authenticated user');
           this.loading = false;
           this.error = 'User not authenticated. Please sign in.';
           return [];
         }
+        this.userName = user.displayName || 'User';
         this.loading = true;
         this.error = null;
+        console.log('LiveStatusComponent: Fetching applications for user', user.uid);
         return this.http.get<BackendApplication[]>(`http://localhost:5000/api/applications/user/${user.uid}`).pipe(
           switchMap(applications => {
-            // Fetch scholarship details for each application
+            console.log('LiveStatusComponent: Applications received', applications);
+            if (!applications || applications.length === 0) {
+              console.log('LiveStatusComponent: No applications found');
+              return [[]]; 
+            }
+            
             const scholarshipRequests = applications.map(app =>
               this.http.get<Scholarship>(`http://localhost:5000/api/scholarships/${app.scholarship_id}`)
-                .pipe(map(scholarship => ({ app, scholarship })))
+                .pipe(
+                  map(scholarship => ({ app, scholarship })),
+            
+                  catchError(error => {
+                    console.error(`LiveStatusComponent: Error fetching scholarship ${app.scholarship_id}`, error);
+                    return of({ app, scholarship: null });
+                  })
+                )
             );
-            return forkJoin(scholarshipRequests.length ? scholarshipRequests : [[]]).pipe(
-              map(results => this.mapToScholarshipApplications(applications, results))
+            console.log('LiveStatusComponent: Fetching scholarships', scholarshipRequests.length);
+            return forkJoin(scholarshipRequests).pipe(
+              map(results => {
+                console.log('LiveStatusComponent: Scholarships fetched', results);
+                return this.mapToScholarshipApplications(applications, results);
+              })
             );
           })
         );
       })
     ).subscribe({
       next: (apps) => {
+        console.log('LiveStatusComponent: Applications mapped', apps);
         this.applications = apps;
         this.calculateStatistics();
         this.loading = false;
+        this.error = null;
       },
       error: (err) => {
-        console.error('Error fetching applications:', err);
-        this.error = 'Failed to load applications. Please try again.';
+        console.error('LiveStatusComponent: Error in subscription', err);
+        this.error = 'Failed to load applications. Please try again later.';
+        this.loading = false;
+      },
+      complete: () => {
+        console.log('LiveStatusComponent: Subscription completed');
         this.loading = false;
       }
     });
@@ -112,11 +138,11 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
 
   private mapToScholarshipApplications(
     backendApps: BackendApplication[],
-    results: { app: BackendApplication; scholarship: Scholarship }[]
+    results: { app: BackendApplication; scholarship: Scholarship | null }[]
   ): ScholarshipApplication[] {
     return backendApps.map(backendApp => {
-      const scholarship = results.find(r => r.app.id === backendApp.id)?.scholarship;
-      // Directly use backend status, with notes for history
+      const result = results.find(r => r.app.id === backendApp.id);
+      const scholarship = result?.scholarship;
       const currentStatus = backendApp.status;
       let notes: string | undefined;
       switch (currentStatus) {
@@ -137,7 +163,6 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
           break;
       }
 
-      // Create status history
       const statusHistory: ApplicationStatus[] = [
         {
           status: 'Submitted',
@@ -154,7 +179,7 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
       if (backendApp.status !== 'Submitted') {
         statusHistory.push({
           status: currentStatus,
-          date: new Date().toLocaleString('en-US', { // Placeholder: use current date
+          date: new Date().toLocaleString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',

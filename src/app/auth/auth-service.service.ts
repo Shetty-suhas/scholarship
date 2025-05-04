@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { Observable, of, from } from 'rxjs';
 import { switchMap, take, map } from 'rxjs/operators';
 
-// Firebase imports
 import { Auth, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from '@angular/fire/auth';
 import { Firestore, docData, setDoc, doc } from '@angular/fire/firestore';
 import { authState } from '@angular/fire/auth';
