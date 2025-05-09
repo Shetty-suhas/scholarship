@@ -7,7 +7,7 @@ import { Subscription, forkJoin, of } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 
 interface ApplicationStatus {
-  status: 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected' | 'Awarded';
+  status: 'pending' | 'approved' | 'rejected';
   date: string;
   notes?: string;
 }
@@ -30,7 +30,7 @@ interface BackendApplication {
   user_id: string;
   student_name: string;
   student_email: string;
-  status: 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected' | 'Awarded';
+  status: 'pending' | 'approved' | 'rejected';
   submitted_at: string;
   documents: { name: string; file_id: string }[];
   remarks: string[];
@@ -89,7 +89,7 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
         this.loading = true;
         this.error = null;
         console.log('LiveStatusComponent: Fetching applications for user', user.uid);
-        return this.http.get<BackendApplication[]>(`http://localhost:5000/api/applications/user/${user.uid}`).pipe(
+        return this.http.get<BackendApplication[]>(`https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/user/${user.uid}`).pipe(
           switchMap(applications => {
             console.log('LiveStatusComponent: Applications received', applications);
             if (!applications || applications.length === 0) {
@@ -98,7 +98,7 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
             }
             
             const scholarshipRequests = applications.map(app =>
-              this.http.get<Scholarship>(`http://localhost:5000/api/scholarships/${app.scholarship_id}`)
+              this.http.get<Scholarship>(`https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships/${app.scholarship_id}`)
                 .pipe(
                   map(scholarship => ({ app, scholarship })),
             
@@ -148,26 +148,20 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
       const currentStatus = backendApp.status;
       let notes: string | undefined;
       switch (currentStatus) {
-        case 'Submitted':
+        case 'pending':
           notes = 'Application submitted successfully';
           break;
-        case 'Under Review':
-          notes = 'Your application is currently being reviewed';
-          break;
-        case 'Accepted':
+        case 'approved':
           notes = 'Your application has been accepted';
           break;
-        case 'Awarded':
-          notes = 'Congratulations! You have been awarded this scholarship';
-          break;
-        case 'Rejected':
+        case 'rejected':
           notes = 'We regret to inform you that your application was not selected';
           break;
       }
 
       const statusHistory: ApplicationStatus[] = [
         {
-          status: 'Submitted',
+          status: 'pending',
           date: new Date(backendApp.submitted_at).toLocaleString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -178,7 +172,7 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
           notes: 'Application submitted successfully'
         }
       ];
-      if (backendApp.status !== 'Submitted') {
+      if (backendApp.status !== 'pending') {
         statusHistory.push({
           status: currentStatus,
           date: new Date().toLocaleString('en-US', {
@@ -188,7 +182,7 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
             hour: '2-digit',
             minute: '2-digit'
           }),
-          notes: backendApp.remarks.length > 0 && currentStatus === 'Rejected'
+          notes: backendApp.remarks.length > 0 && currentStatus === 'rejected'
             ? `${notes}. Reasons: ${backendApp.remarks.join('; ')}`
             : notes
         });
@@ -217,7 +211,7 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.http.delete(`http://localhost:5000/api/applications/${application.id}`).subscribe({
+    this.http.delete(`https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/${application.id}`).subscribe({
       next: () => {
         console.log(`Application ${application.id} withdrawn successfully`);
         this.applications = this.applications.filter(app => app.id !== application.id);
@@ -236,9 +230,9 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
 
   calculateStatistics(): void {
     this.totalApplications = this.applications.length;
-    this.awardedCount = this.applications.filter(app => app.currentStatus === 'Awarded').length;
+    this.awardedCount = this.applications.filter(app => app.currentStatus === 'approved').length;
     this.inProgressCount = this.applications.filter(
-      app => app.currentStatus === 'Submitted' || app.currentStatus === 'Under Review' || app.currentStatus === 'Accepted'
+      app => app.currentStatus === 'pending'
     ).length;
   }
 
@@ -254,16 +248,12 @@ export class LiveStatusComponent implements OnInit, OnDestroy {
 
   getStatusClass(status: ApplicationStatus['status']): string {
     switch (status) {
-      case 'Submitted':
-        return 'status-submitted';
-      case 'Under Review':
-        return 'status-reviewing';
-      case 'Accepted':
+      case 'pending':
+        return 'status-pending';
+      case 'approved':
         return 'status-accepted';
-      case 'Rejected':
+      case 'rejected':
         return 'status-rejected';
-      case 'Awarded':
-        return 'status-awarded';
       default:
         return '';
     }

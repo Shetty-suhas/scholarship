@@ -67,7 +67,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private preloadHasAppliedStatuses(userId: string): void {
     const requests = this.scholarships.map(scholarship =>
       this.http.get<{ hasApplied: boolean }>(
-        `http://localhost:5000/api/applications/user/${userId}/scholarship/${scholarship.id}`
+        `https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/user/${userId}/scholarship/${scholarship.id}`
       ).pipe(
         map(response => ({ scholarshipId: scholarship.id, hasApplied: response.hasApplied })),
         shareReplay(1)
@@ -125,7 +125,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           return of(false);
         }
         return this.http.get<{ hasApplied: boolean }>(
-          `http://localhost:5000/api/applications/user/${user.uid}/scholarship/${scholarshipId}`
+          `https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/user/${user.uid}/scholarship/${scholarshipId}`
         ).pipe(map(response => response.hasApplied));
       })
     );

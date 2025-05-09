@@ -26,6 +26,9 @@ interface Application {
   student_email: string;
   status: string;
   submitted_at: string;
+  bank_account_number: string,  
+  ifsc_code: string,  
+  bank_name: string, 
   documents: { name: string; file_id: string }[];
   verification_result: { documentValid: boolean; reasonForRejection: string[] };
   remarks: string[];
@@ -52,6 +55,8 @@ export class AdminDashboardComponent implements OnInit {
   categories = ['Undergraduate', 'Graduate', 'International', 'Merit-based', 'Need-based'];
   isEditMode = false;
   editingScholarshipId: string | null = null;
+  showPaymentModal: boolean = false;
+  selectedApplication: Application | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -89,7 +94,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadScholarships(): void {
-    this.http.get<Scholarship[]>('http://localhost:5000/api/scholarships')
+    this.http.get<Scholarship[]>('https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships')
       .subscribe({
         next: (data) => {
           this.scholarships = data;
@@ -101,7 +106,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadAllApplications(): void {
-    this.http.get<Application[]>('http://localhost:5000/api/applications')
+    this.http.get<Application[]>('https://astute-catcher-456320-g9.el.r.appspot.com/api/applications')
       .subscribe({
         next: (data) => {
           this.applications = data;
@@ -114,7 +119,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadApprovedApplications(): void {
-    this.http.get<Application[]>('http://localhost:5000/api/applications')
+    this.http.get<Application[]>('https://astute-catcher-456320-g9.el.r.appspot.com/api/applications')
       .subscribe({
         next: (data) => {
           this.approvedApplications = data.filter(app => app.status === 'approved');
@@ -150,12 +155,12 @@ export class AdminDashboardComponent implements OnInit {
     let request: Observable<any>;
     if (this.isEditMode && this.editingScholarshipId) {
       request = this.http.put(
-        `http://localhost:5000/api/scholarships/${this.editingScholarshipId}`,
+        `https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships/${this.editingScholarshipId}`,
         scholarshipData
       );
     } else {
       request = this.http.post(
-        'http://localhost:5000/api/scholarships',
+        'https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships',
         scholarshipData
       );
     }
@@ -210,7 +215,7 @@ export class AdminDashboardComponent implements OnInit {
 
   deleteScholarship(id: string): void {
     if (confirm('Are you sure you want to delete this scholarship?')) {
-      this.http.delete(`http://localhost:5000/api/scholarships/${id}`)
+      this.http.delete(`https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships/${id}`)
         .subscribe({
           next: () => {
             this.loadScholarships();
@@ -224,7 +229,7 @@ export class AdminDashboardComponent implements OnInit {
 
   viewApplications(scholarship: Scholarship): void {
     this.selectedScholarship = scholarship;
-    this.http.get<Application[]>(`http://localhost:5000/api/applications/scholarship/${scholarship.id}`)
+    this.http.get<Application[]>(`https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/scholarship/${scholarship.id}`)
       .subscribe({
         next: (data) => {
           this.scholarshipApplications = data;
@@ -247,7 +252,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
 
-    this.http.put(`http://localhost:5000/api/applications/${application.id}`, updateData)
+    this.http.put(`https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/${application.id}`, updateData)
       .subscribe({
         next: () => {
           application.status = status;
@@ -268,37 +273,12 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   makePayment(application: Application): void {
-    if (confirm(`Are you sure you want to process payment for ${application.student_name}?`)) {
-      const paymentData = {
-        status: 'Awarded',
-        payment_info: {
-          payment_status: 'completed',
-          payment_date: new Date().toISOString(),
-          payment_reference: `PAY-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
-        }
-      };
-
-      this.http.put(`http://localhost:5000/api/applications/${application.id}`, paymentData)
-        .subscribe({
-          next: (updatedApp: any) => {
-            application.status = updatedApp.status;
-            application.payment_status = updatedApp.payment_info.payment_status;
-            application.payment_date = updatedApp.payment_info.payment_date;
-            application.payment_reference = updatedApp.payment_info.payment_reference;
-            console.log('Payment processed successfully');
-            alert(`Payment processed successfully!\nReference: ${updatedApp.payment_info.payment_reference}`);
-            this.loadApprovedApplications();
-          },
-          error: (err) => {
-            console.error('Error processing payment:', err);
-            alert('Failed to process payment: ' + (err.error?.error || 'Unknown error'));
-          }
-        });
-    }
+    this.selectedApplication = application;
+    this.showPaymentModal = true;
   }
 
   viewDocument(fileId: string): void {
-    this.http.get(`http://localhost:5000/api/documents/${fileId}`, { responseType: 'blob' })
+    this.http.get(`https://astute-catcher-456320-g9.el.r.appspot.com/api/documents/${fileId}`, { responseType: 'blob' })
       .subscribe({
         next: (blob) => {
           const url = window.URL.createObjectURL(blob);
@@ -322,6 +302,44 @@ export class AdminDashboardComponent implements OnInit {
     this.activeTab = 'scholarships';
     this.selectedScholarship = null;
     this.scholarshipApplications = [];
+  }
+
+  closePaymentModal(): void {
+    this.showPaymentModal = false;
+    this.selectedApplication = null;
+  }
+
+  confirmPayment(): void {
+    if (!this.selectedApplication) return;
+  
+    const paymentData = {
+      status: 'approved',
+      payment_info: {
+        payment_status: 'completed',
+        payment_date: new Date().toISOString(),
+        payment_reference: `PAY-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
+      }
+    };
+  
+    this.http.put(`https://astute-catcher-456320-g9.el.r.appspot.com/api/applications/${this.selectedApplication.id}`, paymentData)
+      .subscribe({
+        next: (updatedApp: any) => {
+          if (this.selectedApplication && updatedApp.payment_info) {
+            this.selectedApplication.status = updatedApp.status;
+            this.selectedApplication.payment_status = updatedApp.payment_info.payment_status;
+            this.selectedApplication.payment_date = updatedApp.payment_info.payment_date;
+            this.selectedApplication.payment_reference = updatedApp.payment_info.payment_reference;
+          }
+          console.log('Payment processed successfully');
+          this.loadApprovedApplications();
+          this.closePaymentModal();
+        },
+        error: (err) => {
+          console.error('Error processing payment:', err);
+          alert('Failed to process payment: ' + (err.error?.error || 'Unknown error'));
+          this.closePaymentModal();
+        }
+      });
   }
 
   changeTab(tab: string): void {

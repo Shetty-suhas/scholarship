@@ -197,6 +197,57 @@
           </div>
         </div>
 
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bankAccountNumber">Bank Account Number <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="bankAccountNumber" 
+              formControlName="bankAccountNumber"
+              placeholder="Enter bank account number"
+              aria-required="true"
+              [class.invalid]="applicationForm.get('bankAccountNumber')?.invalid && applicationForm.get('bankAccountNumber')?.touched"
+            >
+            <div *ngIf="applicationForm.get('bankAccountNumber')?.invalid && applicationForm.get('bankAccountNumber')?.touched" class="error-message">
+              <span *ngIf="applicationForm.get('bankAccountNumber')?.errors?.['required']">Bank account number is required</span>
+              <span *ngIf="applicationForm.get('bankAccountNumber')?.errors?.['pattern']">Invalid bank account number (8-20 digits)</span>
+            </div>
+          </div>
+        
+          <div class="form-group">
+            <label for="ifscCode">IFSC Code <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="ifscCode" 
+              formControlName="ifscCode"
+              placeholder="Enter IFSC code"
+              aria-required="true"
+              [class.invalid]="applicationForm.get('ifscCode')?.invalid && applicationForm.get('ifscCode')?.touched"
+            >
+            <div *ngIf="applicationForm.get('ifscCode')?.invalid && applicationForm.get('ifscCode')?.touched" class="error-message">
+              <span *ngIf="applicationForm.get('ifscCode')?.errors?.['required']">IFSC code is required</span>
+              <span *ngIf="applicationForm.get('ifscCode')?.errors?.['pattern']">Invalid IFSC code (e.g., SBIN0001234)</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bankName">Bank Name <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="bankName" 
+              formControlName="bankName"
+              placeholder="Enter bank name"
+              aria-required="true"
+              [class.invalid]="applicationForm.get('bankName')?.invalid && applicationForm.get('bankName')?.touched"
+            >
+            <div *ngIf="applicationForm.get('bankName')?.invalid && applicationForm.get('bankName')?.touched" class="error-message">
+              Bank name is required
+            </div>
+          </div>
+        </div>
+
         <h3>Required Documents <span class="document-note">(PDF Format Only)</span></h3>
         <div class="documents-grid">
           <div *ngFor="let doc of scholarship.required_documents" class="document-upload">

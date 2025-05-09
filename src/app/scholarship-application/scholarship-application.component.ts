@@ -38,6 +38,9 @@ interface BackendApplication {
   father_name: string;
   mother_name: string;
   annual_income: number;
+  bank_account_number: string; 
+  ifsc_code: string; 
+  bank_name: string; 
   status: 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected' | 'Awarded';
   submitted_at: string;
   documents: { name: string; file_id: string }[];
@@ -86,7 +89,7 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
 
   private fetchScholarship(id: string): void {
     console.log('Fetching scholarship with ID:', id);
-    this.http.get<Scholarship>(`http://localhost:5000/api/scholarships/${id}`)
+    this.http.get<Scholarship>(`https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships/${id}`)
       .subscribe({
         next: (scholarship) => {
           console.log('Scholarship fetched:', scholarship);
@@ -119,6 +122,9 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
       fatherName: ['', [Validators.required]],
       motherName: ['', [Validators.required]],
       annualIncome: ['', [Validators.required, Validators.min(0)]],
+      bankAccountNumber: ['', [Validators.required, Validators.pattern(/^\d{8,20}$/)]], // 8-20 digits
+      ifscCode: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]], // e.g., SBIN0001234
+      bankName: ['', [Validators.required]],
       terms: [true, [Validators.requiredTrue]]
     });
   }
@@ -168,7 +174,7 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
       this.showSubmissionMessage = true;
       return;
     }
-
+  
     this.isSubmitting = true;
     this.showSubmissionMessage = false;
     
@@ -180,7 +186,7 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
           throw new Error('User not authenticated. Please sign in again.');
         }
       });
-
+  
       const formData = new FormData();
       formData.append('scholarship_id', this.scholarship.id);
       formData.append('user_id', user.uid);
@@ -192,19 +198,22 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
       formData.append('father_name', this.applicationForm.get('fatherName')?.value || '');
       formData.append('mother_name', this.applicationForm.get('motherName')?.value || '');
       formData.append('annual_income', this.applicationForm.get('annualIncome')?.value?.toString() || '');
+      formData.append('bank_account_number', this.applicationForm.get('bankAccountNumber')?.value || ''); // New field
+      formData.append('ifsc_code', this.applicationForm.get('ifscCode')?.value || ''); // New field
+      formData.append('bank_name', this.applicationForm.get('bankName')?.value || ''); // New field
       formData.append('status', 'pending');
       formData.append('submitted_at', new Date().toISOString());
-
+  
       for (const docName of this.scholarship.required_documents) {
         const file = this.documents[docName];
         if (file) {
           formData.append(docName, file, file.name);
         }
       }
-
+  
       console.log('Submitting FormData:', formData);
-
-      this.http.post('http://localhost:5000/api/applications', formData).subscribe({
+  
+      this.http.post('https://astute-catcher-456320-g9.el.r.appspot.com/api/applications', formData).subscribe({
         next: (response) => {
           console.log('Application submitted in background:', response);
         },
@@ -212,7 +221,7 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
           console.error('Background submission error:', error);
         }
       });
-
+  
       this.resetForm();
       this.submissionMessage = 'Application submitted! Redirecting...';
       this.showSubmissionMessage = true;
@@ -234,7 +243,20 @@ export class ScholarshipApplicationComponent implements OnInit, OnDestroy {
   }
   
   private resetForm(): void {
-    this.applicationForm.reset({ terms: true });
+    this.applicationForm.reset({
+      studentName: '',
+      studentEmail: '',
+      age: '',
+      gender: '',
+      dob: '',
+      fatherName: '',
+      motherName: '',
+      annualIncome: '',
+      bankAccountNumber: '', 
+      ifscCode: '', 
+      bankName: '', 
+      terms: true
+    });
     this.scholarship?.required_documents.forEach(doc => {
       this.documents[doc] = null;
     });

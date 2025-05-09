@@ -34,7 +34,7 @@ export interface Application {
   providedIn: 'root'
 })
 export class ScholarshipService {
-  private apiUrl = 'http://localhost:5000/api/scholarships';
+  private apiUrl = 'https://astute-catcher-456320-g9.el.r.appspot.com/api/scholarships';
 
   constructor(private http: HttpClient) {}
 
