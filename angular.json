@@ -23,7 +23,13 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/"
+              },
+              {
+                "glob": "_redirects",
+                "input": "src",
+                "output": "/"
               }
             ],
             "styles": [
@@ -81,12 +87,13 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/"
               },
               {
                 "glob": "_redirects",
                 "input": "src",
-                "output": ""
+                "output": "/"
               }
             ],
             "styles": [
@@ -95,10 +102,10 @@
             "scripts": []
           }
         }
-      }
     }
-  },
-  "cli": {
-    "analytics": false
   }
+},
+"cli": {
+  "analytics": false
+}
 }
